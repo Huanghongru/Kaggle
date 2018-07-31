@@ -9,7 +9,7 @@ class Model(object):
     """
     Implement LeNet-5
     """
-    def __init__(self, input_shape, lr=1e3, batch_size=64, epochs=4, isTrain=True):
+    def __init__(self, input_shape=(1, 28, 28), lr=1e3, batch_size=64, epochs=4, isTrain=True):
         self.lr = lr
         self.isTrain = isTrain
         self.batch_size = batch_size
@@ -35,17 +35,18 @@ class Model(object):
         self.model.add(Dense(10, activation='softmax'))
 
         self.model.compile(loss='categorical_crossentropy',
-                           optimizer='adam',
+                           optimizer=keras.optimizers.Adam(lr=self.lr),
                            metrics=['accuracy'])
 
-    def train(self, x_train, y_train):
+    def train(self, x_train, y_train, save_model=True):
         """
         """
         self.create_model()
         self.model.fit(x_train, y_train,
                        batch_size=self.batch_size,
                        epochs=self.epochs)
-        self.model.save('./models/mnist.h5')
+        if save_model:
+            self.model.save('./models/mnist.h5')
 
     def predict(self, x_test, save_csv=True):
         """
@@ -64,13 +65,13 @@ class Model(object):
 
 def main():
     d = DataLoader()
-    x_train, y_train = d.load_train_data()
+    x_train, y_train = d.load_train_data(ratio=0.005)
     y_train = keras.utils.to_categorical(y_train, 10)
-    lenetModel = Model(x_train.shape[1:])
-    lenetModel.train(x_train, y_train)
+    lenetModel = Model()
+    lenetModel.train(x_train, y_train, save_model=False)
 
-    x_test = d.load_test_data()
-    lenetModel.predict(x_test)
+    # x_test = d.load_test_data()
+    # lenetModel.predict(x_test)
 
 if __name__ == '__main__':
     main()
