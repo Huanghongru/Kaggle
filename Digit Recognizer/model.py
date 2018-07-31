@@ -47,13 +47,30 @@ class Model(object):
                        epochs=self.epochs)
         self.model.save('./models/mnist.h5')
 
+    def predict(self, x_test, save_csv=True):
+        """
+        """
+        if not self.isTrain:
+            self.model = keras.models.load_model('./models/mnist.h5')
+        result = self.model.predict(x_test, batch_size=self.batch_size).argmax(axis=-1)
+
+        if save_csv:
+            with open("result.csv", "w") as f:
+                f.write("ImageId,Label\n");
+                for i, label in enumerate(result):
+                    f.write("%s,%s\n" % (i+1, label))
+        return result
+
 
 def main():
     d = DataLoader()
-    x_train, y_train = d.load_train_data(ratio=0.05)
+    x_train, y_train = d.load_train_data()
     y_train = keras.utils.to_categorical(y_train, 10)
     lenetModel = Model(x_train.shape[1:])
     lenetModel.train(x_train, y_train)
+
+    x_test = d.load_test_data()
+    lenetModel.predict(x_test)
 
 if __name__ == '__main__':
     main()
