@@ -1,4 +1,5 @@
 import pandas
+import keras
 import numpy as np
 
 # Use pandas to read the train data file, which is much faster than numpy
@@ -12,6 +13,7 @@ class DataLoader(object):
         self.train_file = train_file
         self.test_file = test_file
 
+
     def load_train_data(self, ratio=1):
         """
         Load given raito of train data.
@@ -19,8 +21,9 @@ class DataLoader(object):
         """
         self.train_data = pandas.io.parsers.read_csv(self.train_file).values
         n, _ = self.train_data.shape
-        x_train = self.train_data[:int(n*ratio), 1:].reshape((-1, 1, 28, 28))
+        x_train = self.train_data[:int(n*ratio), 1:].reshape((-1, 28, 28, 1)) / 255.0
         y_train = self.train_data[:int(n*ratio), :1]
+
         return x_train, y_train
 
     def load_test_data(self, ratio=1):
@@ -29,7 +32,8 @@ class DataLoader(object):
         """
         self.test_data = pandas.io.parsers.read_csv(self.test_file).values
         n, _ = self.test_data.shape
-        return self.test_data[:int(n*ratio), :].reshape((-1, 1, 28, 28))
+        return self.test_data[:int(n*ratio), :].reshape((-1, 28, 28, 1)) / 255.0
+
 
 
 def main():
