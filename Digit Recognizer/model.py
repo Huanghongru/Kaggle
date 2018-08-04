@@ -1,8 +1,9 @@
+import sys
 import keras
 import numpy as np
 from keras.models import Sequential
 from keras.losses import categorical_crossentropy
-from keras.layers import Conv2D, Dense, MaxPooling2D, Flatten
+from keras.layers import Conv2D, Dense, MaxPooling2D, Flatten, Dropout
 from sklearn.model_selection import train_test_split
 from data_loader import *
 
@@ -11,13 +12,15 @@ class Model(object):
     Implement LeNet-5
     """
     def __init__(self, input_shape=(28, 28, 1), lr=1e-3, 
-                batch_size=64, epochs=4, isTrain=True, aug_train=False):
+                batch_size=64, epochs=4, isTrain=True, contiTrain=False,
+                aug_train=False):
         self.lr = lr
         self.isTrain = isTrain
         self.batch_size = batch_size
         self.epochs = epochs
         self.input_shape = input_shape
         self.aug_train = aug_train
+        self.contiTrain = contiTrain
 
         self.datagen = keras.preprocessing.image.ImageDataGenerator(
             featurewise_center=False,
@@ -41,11 +44,14 @@ class Model(object):
                         padding='same', activation='relu',
                         input_shape=self.input_shape))
         self.model.add(MaxPooling2D(pool_size=(2, 2)))
+        self.model.add(Dropout(0.25))
         self.model.add(Conv2D(16, kernel_size=(5, 5),
                         activation='relu'))
         self.model.add(MaxPooling2D(pool_size=(2, 2)))
+        self.model.add(Dropout(0.25))
         self.model.add(Flatten())
         self.model.add(Dense(120, activation='relu'))
+        self.model.add(Dropout(0.5))
         self.model.add(Dense(84, activation='relu'))
         self.model.add(Dense(10, activation='softmax'))
 
@@ -56,7 +62,10 @@ class Model(object):
     def train(self, x_train, y_train, x_val, y_val, save_model=True, verbose=1):
         """
         """
-        self.create_model()
+        if self.contiTrain:
+            self.model = keras.models.load_model('./models/mnist.h5')
+        else:
+            self.create_model()
         if self.aug_train:
             self.model.fit_generator(self.datagen.flow(x_train, y_train, 
                                    batch_size=self.batch_size),
@@ -99,15 +108,19 @@ class Model(object):
 
 
 def main():
-    d = DataLoader()
-    x_train, y_train = d.load_train_data(ratio=0.2)
-    y_train = keras.utils.to_categorical(y_train, 10)
-    x_train, x_val, y_train, y_val = train_test_split(x_train, y_train, test_size=0.1)
-    lenetModel = Model(aug_train=True)
-    lenetModel.train(x_train, y_train, x_val, y_val, save_model=False)
+    if sys.argv[1] == "train":
+        d = DataLoader()
+        x_train, y_train = d.load_train_data(ratio=1)
+        y_train = keras.utils.to_categorical(y_train, 10)
+        x_train, x_val, y_train, y_val = train_test_split(x_train, y_train, test_size=0.1)
+        lenetModel = Model(lr=0.00038, batch_size=32, epochs=64, contiTrain=True, aug_train=True)
+        lenetModel.train(x_train, y_train, x_val, y_val, save_model=True)
 
-    # x_test = d.load_test_data()
-    # lenetModel.predict(x_test)
+    if sys.argv[1] == "test":
+        d = DataLoader()
+        x_test = d.load_test_data()
+        lenetModel = Model(isTrain=False)
+        lenetModel.predict(x_test)
 
 if __name__ == '__main__':
     main()
